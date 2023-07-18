@@ -24,17 +24,20 @@ gmail_client = GmailAPI(
 
 ######################################################################################
 #                    (obtain & print token for debugging purposes)                   #
+#                                   TODO: DELETE!!                                   #
 ######################################################################################
-gmail_client.delegated_credentials.refresh(Request())
+# gmail_client.delegated_credentials.refresh(Request())
 
-print(gmail_client.delegated_credentials.token + '\n')
+# print(gmail_client.delegated_credentials.token + '\n')
 
 
 ######################################################################################
 #                                       LOGIC                                        #
 ######################################################################################
 
-print(gmail_client.get_new_message_ids())
+# DEBUGGING:
+print(gmail_client.get_message('1896b185339c8440'))
+
 
 # Sync new messages, for each new message:
     # existing client?
