@@ -47,7 +47,7 @@ jobs = list()
 for thread in threads_needing_response:
     conversation = gmail_api.parse_thread_for_messages(thread)
     subject_of_last_email = gmail_api.extract_subject_of_last_message_in_thread(thread)
-    email_address_of_sender = gmail_api.extract_email_address_of_sender_of_last_message_in_thread
+    email_address_of_sender = gmail_api.extract_email_address_of_sender_of_last_message_in_thread(thread)
     job = Job(recipient = email_address_of_sender, subject = subject_of_last_email, conversation = conversation, thread = thread)
     jobs.append(job)
 

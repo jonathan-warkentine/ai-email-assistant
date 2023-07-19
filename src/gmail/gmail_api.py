@@ -145,24 +145,22 @@ class GmailAPI:
         return deduplicate_list(message_thread_ids)
 
     def compose_email(self, recipient, subject, message_text, thread_id):
-        message = MIMEText(message_text)
-        message['to'] = recipient
-        message['from'] = self.user
-        message['subject'] = subject
-        
-        email_body = {'raw': base64.urlsafe_b64encode(message.as_bytes()), 'threadId': thread_id}
+        email = MIMEText(message_text)
+        email['to'] = recipient
+        email['from'] = self.user
+        email['subject'] = subject
+            
+        raw_email = base64.urlsafe_b64encode(email.as_bytes()).decode("utf-8")
+        email_body = {'raw': raw_email, 'threadId': thread_id}
         return email_body
-
+    
     # TODO: make sure it attaches to existing threads if any
-    def send_email(self, message, email):
+    def send_email(self, email):
         try:
-            request = self.client.users().messages().send(userId=self.user, startHistoryId=self.data_store.read('historyId'))
+            request = self.client.users().messages().send(userId=self.user, body = email)
             response = request.execute()
 
-            # Update historyId for future syncing
-            self.data_store.write('historyId', response.get('historyId'))
-
-            return response.get('history')
+            return response.get
         
         except errors.HttpError as e:
             print(f"An error occurred: {e}")
