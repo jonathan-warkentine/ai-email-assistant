@@ -44,12 +44,15 @@ class GmailAPI:
 
         for thread in threads:
             last_message = self.extract_last_message_in_thread(thread)
-            headers = last_message['payload']['headers']
-            from_header = next(header for header in headers if header['name'] == 'From')
-            sender = from_header['value']
-            sender_email = self.extract_email(sender)
+            headers = last_message.get('payload').get('headers')
+            
+            sender_email = ''
+            for header in headers:
+                if (header.get('Name') == 'From'):
+                    sender = header.get('value')
+                    sender_email = self.extract_email(sender)
 
-            if sender_email != self.user:
+            if (sender_email != self.user):
                 threads_needing_response.append(thread)
 
         return threads_needing_response
@@ -72,7 +75,10 @@ class GmailAPI:
         for message in thread_messages:
             try:
                 headers = message['payload']['headers']
-                sender_email = next(header['value'] for header in headers if header['name'] == 'From')
+                sender_email = '' 
+                for header in headers: 
+                    if (header['name'] == 'From'):
+                        sender_email = self.extract_email(header.get('value'))
 
                 role = "assistant" if self.user in sender_email else "user"
 

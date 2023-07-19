@@ -56,4 +56,4 @@ if jobs:
         chatgpt_response = chatgpt_api.fetch_chatgpt_response(messages = job.conversation)
         message_text = chatgpt_response.get('choices')[0].get('message').get('content')
         email_draft = gmail_api.compose_email(recipient = job.recipient, subject = job.subject, message_text = message_text, thread_id = thread.get('id'))
-        print(email_draft)
+        gmail_api.send_email(email = email_draft)
