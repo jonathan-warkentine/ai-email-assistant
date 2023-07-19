@@ -2,6 +2,7 @@
 client_secret*.json
 credentials.json
 service_account_key.json
+*key.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
