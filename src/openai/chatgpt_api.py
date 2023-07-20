@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from src.utils.data_util import Data_store
 
 import openai
 import os
@@ -12,16 +13,25 @@ class ChatGPT_API:
         self.client = openai
         self.client.organization = os.getenv('OPENAI_ORG_ID')
         self.client.api_key = os.getenv('OPENAI_API_KEY')
+        self.data_store = Data_store('src/openai/openai_setup.json')
 
     def fetch_chatgpt_response(self, messages):
-        response = None
+        messages_with_system_content = self.attach_system_content_to_messages(messages = messages)
         try:
-            response = self.client.ChatCompletion.create(
+            return self.client.ChatCompletion.create(
                 model = self.MODEL,
-                messages = messages,
+                messages = messages_with_system_content,
                 temperature=0,
             )
         except BaseException as e:
             print("Error with OpenAI API call: ", e)
-        
-        return response
+    
+    def attach_system_content_to_messages(self, messages):
+        prompt = self.data_store.read('system_content')
+        system_content = {
+            "role" : "system",
+            "content" : prompt
+        }
+
+        messages.insert(0, system_content)
+        return messages
