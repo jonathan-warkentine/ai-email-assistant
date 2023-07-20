@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from src.utils.data_util import Data_store
+from utils.data_util import Data_store
 
 import openai
 import os
@@ -13,7 +13,7 @@ class ChatGPT_API:
         self.client = openai
         self.client.organization = os.getenv('OPENAI_ORG_ID')
         self.client.api_key = os.getenv('OPENAI_API_KEY')
-        self.data_store = Data_store('src/openai/openai_setup.json')
+        self.data_store = Data_store('chatgpt_api/openai_setup.json')
 
     def fetch_chatgpt_response(self, messages):
         messages_with_system_content = self.attach_system_content_to_messages(messages = messages)

@@ -1,15 +1,15 @@
 from google.auth.transport.requests import Request
 
-from src.gmail.gmail_api import GmailAPI
-from src.openai.chatgpt_api import ChatGPT_API
-from src.job import Job
-from src.utils.extract_email_from_text import extract_email_from_text
+from gmail_api.gmail_api import GmailAPI
+from chatgpt_api.chatgpt_api import ChatGPT_API
+from job import Job
+from utils.extract_email_from_text import extract_email_from_text
 
 ######################################################################################
 #                          Initialize our Gmail Client                               #
 ######################################################################################
 gmail_api = GmailAPI(
-    credentials_file_path='src/gmail/service_account_key.json', 
+    credentials_file_path='gmail_api/service_account_key.json', 
     scopes=['https://mail.google.com/'], 
     user='automation@topdawgjunkremoval.com', 
     data_store_filepath='./data.json'

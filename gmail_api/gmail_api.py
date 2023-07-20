@@ -2,18 +2,18 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
-from src.utils.data_util import Data_store
-from src.utils.deduplicate_list import deduplicate_list 
-from src.utils.extract_email_from_text import extract_email_from_text
-from src.utils.convert_line_breaks_to_html import convert_line_breaks_to_html
-from src.utils.strip_quoted_text import strip_quoted_text
+from utils.data_util import Data_store
+from utils.deduplicate_list import deduplicate_list 
+from utils.extract_email_from_text import extract_email_from_text
+from utils.convert_line_breaks_to_html import convert_line_breaks_to_html
+from utils.strip_quoted_text import strip_quoted_text
 
 import base64
 
 class GmailAPI:
     def __init__(self, credentials_file_path, scopes = ['https://mail.google.com/'], user = 'me', data_store_filepath = './gmail.json'):
         self.user = user
-        self.data_store = Data_store('src/gmail/gmail.json')
+        self.data_store = Data_store('gmail_api/gmail.json')
         self.credentials = service_account.Credentials.from_service_account_file(
             credentials_file_path, scopes = scopes
         )
