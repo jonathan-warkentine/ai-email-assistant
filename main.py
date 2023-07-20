@@ -2,7 +2,7 @@ from google.auth.transport.requests import Request
 
 from gmail_api.gmail_api import GmailAPI
 from chatgpt_api.chatgpt_api import ChatGPT_API
-from job import Job
+from models.job import Job
 from utils.extract_email_from_text import extract_email_from_text
 
 ######################################################################################
