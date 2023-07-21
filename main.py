@@ -1,15 +1,16 @@
 from google.auth.transport.requests import Request
 
-from gmail_api.gmail_api import GmailAPI
-from chatgpt_api.chatgpt_api import ChatGPT_API
+from gmail.gmail_api import Gmail_api
+from chatgpt.chatgpt_api import Chatgpt_api
+from workiz.workiz_api import Workiz_api
 from models.job import Job
 from utils.extract_email_from_text import extract_email_from_text
 
 ######################################################################################
 #                          Initialize our Gmail Client                               #
 ######################################################################################
-gmail_api = GmailAPI(
-    credentials_file_path='gmail_api/service_account_key.json', 
+gmail_api = Gmail_api(
+    credentials_file_path='gmail/service_account_key.json', 
     scopes=['https://mail.google.com/'], 
     user='automation@topdawgjunkremoval.com', 
     data_store_filepath='./data.json'
@@ -18,13 +19,25 @@ gmail_api = GmailAPI(
 ######################################################################################
 #                          TODO: Initialize our OpenAI Client                        #
 ######################################################################################
-chatgpt_api = ChatGPT_API()
+chatgpt_api = Chatgpt_api()
 
 ######################################################################################
-#                          TODO: Initialize our Workiz Client                        #
+#                             Initialize our Workiz Client                           #
 ######################################################################################
-
-
+workiz_api = Workiz_api()
+# obtain schedule for chatgpt prompt
+busy_blocks = workiz_api.get_busy_blocks()
+busy_blocks_readable = list()
+for busy_block in busy_blocks:
+    block_start = busy_block.get('start')
+    block_end = busy_block.get('end')
+    busy_block_readable = f'from {block_start} to {block_end}'
+    busy_blocks_readable.append(busy_block_readable)
+stringified_busy_blocks_readable = ', '.join(busy_blocks_readable)
+scheduling_parameters = {
+    'role' : 'system',
+    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. You have existing appointments {stringified_busy_blocks_readable}'
+}
 
 ######################################################################################
 #                    (obtain & print token for debugging purposes)                   #
@@ -39,14 +52,14 @@ chatgpt_api = ChatGPT_API()
 #                                       LOGIC                                        #
 ######################################################################################
 
-# DEBUGGING:
 threads_with_new_messages = gmail_api.fetch_threads_with_new_messages()
 threads_needing_response = gmail_api.filter_threads_needing_response(threads_with_new_messages)
 
 # Prepare thread as conversation for ChatGPT API call ('messages' parameter)
 jobs = list()
 for thread in threads_needing_response:
-    conversation = gmail_api.parse_thread_for_messages(thread)
+    messages = gmail_api.parse_thread_for_messages(thread)
+    prepared_messages = gmail_api.prepare_messages_for_chatgpt(messages=messages)
     last_email_in_thread = gmail_api.extract_last_message_in_thread(thread)
     message_id_of_last_email = gmail_api.extract_message_header_value(
         message = last_email_in_thread,
@@ -65,7 +78,7 @@ for thread in threads_needing_response:
     job = Job(
         recipient = email_address_of_sender_of_last_email, 
         subject = subject_of_last_email, 
-        conversation = conversation, 
+        conversation = prepared_messages, 
         thread = thread,
         in_reply_to = message_id_of_last_email
     )
@@ -77,7 +90,7 @@ for thread in threads_needing_response:
     ################################################
 
 for job in jobs:
-    chatgpt_response = chatgpt_api.fetch_chatgpt_response(messages = job.conversation)
+    chatgpt_response = chatgpt_api.fetch_chatgpt_response(messages = job.conversation, custom_system_content = scheduling_parameters)
     message_text = chatgpt_response.get('choices')[0].get('message').get('content')
     email_draft = gmail_api.compose_email(
         recipient = job.recipient, 
@@ -90,7 +103,7 @@ for job in jobs:
     ################################################
     #####      PRINT FOR DEBUGGING PURPOSES    #####
     ################################################
-    print(f"Now emailing...:\nrecipient: {job.recipient}\nsubject: {job.subject}\nthreadId: {job.thread.get('id')}")
+    print(f"\nNow emailing...:\nrecipient: {job.recipient}\nsubject: {job.subject}")
     ################################################
     
     gmail_api.send_email(email = email_draft)
