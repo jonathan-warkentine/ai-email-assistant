@@ -1,6 +1,6 @@
 # Google auth
 client_secret*.json
-credentials.json
+*credentials*.*
 service_account_key.json
 *key.*
 

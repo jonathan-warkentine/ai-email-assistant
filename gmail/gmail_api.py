@@ -10,10 +10,10 @@ from utils.strip_quoted_text import strip_quoted_text
 
 import base64
 
-class GmailAPI:
+class Gmail_api:
     def __init__(self, credentials_file_path, scopes = ['https://mail.google.com/'], user = 'me', data_store_filepath = './gmail.json'):
         self.user = user
-        self.data_store = Data_store('gmail_api/gmail.json')
+        self.data_store = Data_store('gmail/gmail.json')
         self.credentials = service_account.Credentials.from_service_account_file(
             credentials_file_path, scopes = scopes
         )
@@ -64,37 +64,50 @@ class GmailAPI:
         return thread['messages'][-1]
 
     def parse_thread_for_messages(self, thread):
-        message_exchange = list()
-        thread_messages = thread.get('messages')
+        return thread.get('messages')
 
-        for message in thread_messages:
+    def process_part(self, part, role):
+        message_exchange = list()
+        mime_types = ['text/plain', 'text/html']
+
+        if part['mimeType'] in mime_types:
+            data = part['body']['data']
+            text = base64.urlsafe_b64decode(data).decode('utf-8')
+            message_exchange.append({"role": role, "content": strip_quoted_text(text)})
+        elif part['mimeType'] == 'multipart/mixed':
+            for subpart in part['parts']:
+                message_exchange.extend(self.process_part(subpart, role))
+
+        return message_exchange
+
+    def prepare_messages_for_chatgpt(self, messages):
+        message_exchange = list()
+
+        for message in messages:
             try:
                 sender_email = extract_email_from_text(
                     self.extract_message_header_value(
-                        message = message,
-                        header_name = 'From'
+                        message=message,
+                        header_name='From'
                     )
                 )
 
-                role = 'assistant' 
-                if sender_email == self.user:
-                    role = 'user'
+                role = 'assistant' if sender_email == self.user else 'user'
 
                 if 'parts' in message['payload']:
                     for part in message['payload']['parts']:
-                        if part['mimeType'] == 'text/plain':
-                            data = part['body']['data']
-                            text = base64.urlsafe_b64decode(data).decode('utf-8')
-                            message_exchange.append({"role": role, "content": strip_quoted_text(text)})
+                        message_exchange.extend(self.process_part(part, role))
                 else:
                     data = message['payload']['body']['data']
                     text = base64.urlsafe_b64decode(data).decode('utf-8')
                     message_exchange.append({"role": role, "content": strip_quoted_text(text)})
+
             except KeyError:
                 continue
 
         return message_exchange
 
+            
     def fetch_new_message_thread_ids(self):
         new_message_thread_ids = list()
         new_histories = self.fetch_new_histories()
@@ -136,26 +149,25 @@ class GmailAPI:
         
         return deduplicate_list(message_thread_ids)
 
+    # TODO: convert to multipart mime type if including attachments
     def compose_email(self, recipient, subject, message_text, thread_id, in_reply_to):
         message_text = convert_line_breaks_to_html(message_text)
 
-        mime_message = MIMEMultipart()
+        mime_message = MIMEText(message_text, 'html')
         mime_message['To'] = recipient
         mime_message['From'] = self.user
         mime_message['Subject'] = subject
         mime_message['In-Reply-To'] = in_reply_to
         mime_message['References'] = in_reply_to
-        mime_message.attach(MIMEText(message_text, 'html'))    
-        
+
         raw_email = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
         email_body = {
             'raw': raw_email, 
             'threadId': thread_id
         }
-        
+
         return email_body
-    
-    # TODO: make sure it attaches to existing threads if any
+
     def send_email(self, email):
         try:
             request = self.client.users().messages().send(userId=self.user, body = email)
