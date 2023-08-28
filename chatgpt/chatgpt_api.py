@@ -9,7 +9,7 @@ import os
 load_dotenv()
 
 class Chatgpt_api:
-    def __init__(self, model='gpt-3.5-turbo'):
+    def __init__(self, model='gpt-4'):
         self.MODEL = model
         self.client = openai
         self.client.organization = os.getenv('OPENAI_ORG_ID')

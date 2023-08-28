@@ -36,17 +36,8 @@ for busy_block in busy_blocks:
 stringified_busy_blocks_readable = ', '.join(busy_blocks_readable)
 scheduling_parameters = {
     'role' : 'system',
-    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. You have existing appointments {stringified_busy_blocks_readable}'
+    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Customers have already booked appoints with you during the following slots: {stringified_busy_blocks_readable}. IT IS IMPERATIVE THAT YOU DO NOT SCHEDULE DURING THESE LISTED EXISTING APPOINTMENTS AND DOUBLE BOOK.'
 }
-
-######################################################################################
-#                    (obtain & print token for debugging purposes)                   #
-#                                   TODO: DELETE!!                                   #
-######################################################################################
-# gmail_api.delegated_credentials.refresh(Request())
-# print(gmail_api.delegated_credentials.token + '\n')
-
-
 
 ######################################################################################
 #                                       LOGIC                                        #
