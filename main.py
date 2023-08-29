@@ -12,7 +12,7 @@ from utils.extract_email_from_text import extract_email_from_text
 gmail_api = Gmail_api(
     credentials_file_path='gmail/service_account_key.json', 
     scopes=['https://mail.google.com/'], 
-    user='automation@topdawgjunkremoval.com', 
+    user='info@topdawgjunkremoval.com', 
     data_store_filepath='./gmail/gmail.json'
 )
 
@@ -36,7 +36,7 @@ for busy_block in busy_blocks:
 stringified_busy_blocks_readable = ', '.join(busy_blocks_readable)
 scheduling_parameters = {
     'role' : 'system',
-    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Customers have already booked appoints with you during the following slots: {stringified_busy_blocks_readable}. IT IS IMPERATIVE THAT YOU DO NOT SCHEDULE DURING THESE LISTED EXISTING APPOINTMENTS AND DOUBLE BOOK.'
+    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Customers have already booked appointments with you during the following slots: {stringified_busy_blocks_readable}. IT IS IMPERATIVE THAT YOU DO NOT SCHEDULE DURING THESE LISTED EXISTING APPOINTMENTS AND DOUBLE BOOK.'
 }
 
 ######################################################################################

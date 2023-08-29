@@ -1,6 +1,16 @@
 # ai-email-assistant
 An AI powered email bot for small businesses that integrates with Workiz for client and lead creation, basic job quoting, as well as job scheduling.
 
+## Setup
+1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save it in the `gmail` directory as `service_account_key.json`.
+2. Obtain your API key for Workiz and save it as `workiz_credentials.json`:
+```json
+{ 
+    "api_token" : "api_xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+```
+3. Set your respective email in the `main.py` gmail client initialization. 
+
 ## Run Python App Locally
 From the root:
 ```shell
