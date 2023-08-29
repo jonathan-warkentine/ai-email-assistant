@@ -13,7 +13,7 @@ gmail_api = Gmail_api(
     credentials_file_path='gmail/service_account_key.json', 
     scopes=['https://mail.google.com/'], 
     user='automation@topdawgjunkremoval.com', 
-    data_store_filepath='./data.json'
+    data_store_filepath='./gmail/gmail.json'
 )
 
 ######################################################################################

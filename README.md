@@ -1,6 +1,13 @@
 # ai-email-assistant
 An AI powered email bot for small businesses that integrates with Workiz for client and lead creation, basic job quoting, as well as job scheduling.
 
+## Run Python App Locally
+From the root:
+```shell
+pip install -r requirements.txt
+python main.py
+```
+
 ## Build in Docker and Push to AWS ECR
 To build for X86 on an ARM machine:
 

@@ -32,6 +32,23 @@ class Gmail_api:
         self.delegated_credentials = self.credentials.with_subject(user)
         self.client = discovery.build('gmail', 'v1', credentials=self.delegated_credentials)
 
+    def synchronize_gmail_client(self):
+        """
+        Uses historyId of latest message to update historyId in data store.
+        """
+        try:
+            # First get the latest historyId
+            message_list = self.client.users().messages().list(userId="me").execute().get('messages')
+            latest_message_id = message_list[0].get("id")
+            latest_message = self.client.users().messages().get(userId="me", id=latest_message_id).execute()
+            latest_history_id = latest_message.get("historyId")
+            self.data_store.write("historyId", latest_history_id)
+
+            return latest_history_id
+        
+        except errors.HttpError as e:
+            print(f"An error occurred synchronizing the Gmail client: {e}")
+
     def fetch_threads_with_new_messages(self):
         """
         Fetches Gmail threads that contain new messages.
@@ -63,7 +80,7 @@ class Gmail_api:
             return request.execute()
         
         except errors.HttpError as e:
-            print(f"An error occurred: {e}")
+            print(f"An error occurred fetching threads: {e}")
 
     def filter_threads_needing_response(self, threads):
         """
@@ -158,7 +175,12 @@ class Gmail_api:
             return response.get('history')
         
         except errors.HttpError as e:
-            print(f"An error occurred: {e}")
+            print(f"An error occurred fetching new Gmail histories: {e}")
+            print(f"Reverting to a full synchronization of the Gmail client")
+            self.synchronize_gmail_client()
+            return self.fetch_new_histories()
+
+
 
     def parse_new_messages_from_histories(self, histories):
         """
@@ -217,7 +239,10 @@ class Gmail_api:
 
     def save_email_draft(self, email):
         try:
-            self.client.users().drafts().create(userId="me", body=email).execute()
+            wrapped_email = {
+            'message': email
+            }
+            self.client.users().drafts().create(userId="me", body=wrapped_email).execute()
 
         except errors.HttpError as e:
             print(F'An error occurred saving email draft: {e}')
