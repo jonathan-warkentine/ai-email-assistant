@@ -6,9 +6,10 @@ To build for X86 on an ARM machine:
 
 ```shell
 # Create a new builder instance if you haven't already (you must have Docker installed on your machine)
-docker buildx create --use --name mybuilder
+docker buildx create --use --name <your-builder-name>
 
-# If you already have a builder, move on to the next steps below
+# Or if you already have a builder:
+docker buildx use <your-builder-name> 
 
 # Get a fresh authentication token for your local Docker (you must have AWS CLI installed on your machine)
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin <your_aws_ecr_url>
