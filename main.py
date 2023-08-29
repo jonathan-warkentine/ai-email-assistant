@@ -90,11 +90,4 @@ for job in jobs:
         thread_id = job.thread.get('id'),
         in_reply_to = job.in_reply_to
     )
-
-    ################################################
-    #####      PRINT FOR DEBUGGING PURPOSES    #####
-    ################################################
-    print(f"\nNow emailing...:\nrecipient: {job.recipient}\nsubject: {job.subject}")
-    ################################################
-    
-    gmail_api.send_email(email = email_draft)
+    gmail_api.save_email_draft(email_draft)
