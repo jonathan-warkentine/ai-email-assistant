@@ -176,7 +176,7 @@ class Gmail_api:
         
         except errors.HttpError as e:
             print(f"An error occurred fetching new Gmail histories: {e}")
-            print(f"Reverting to a full synchronization of the Gmail client")
+            print(f"Reverting to a full synchronization of the Gmail client; any new messages will be disregarded.")
             self.synchronize_gmail_client()
             return self.fetch_new_histories()
 
