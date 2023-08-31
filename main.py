@@ -6,6 +6,7 @@ from chatgpt.chatgpt_api import Chatgpt_api
 from workiz.workiz_api import Workiz_api
 from models.job import Job
 from utils.extract_email_from_text import extract_email_from_text
+from utils.convert_string_to_boolean import convert_string_to_boolean
 
 ######################################################################################
 #                          Initialize our Gmail Client                               #
@@ -80,7 +81,12 @@ jobs = list()
 for thread in threads_needing_response:
     messages = gmail_api.parse_thread_for_messages(thread)
     prepared_messages = gmail_api.prepare_messages_for_chatgpt(messages=messages)
-    messages_regard_job = chatgpt_api.decide_if_messages_regard_job(prepared_messages)
+    messages_regard_job_chatgpt_response = chatgpt_api.decide_if_messages_regard_job(prepared_messages)
+    messages_regard_job_as_boolean = convert_string_to_boolean(messages_regard_job_chatgpt_response.get('choices')[0].get('message').get('content'))
+
+    if messages_regard_job_as_boolean == False:
+        continue
+
     last_email_in_thread = gmail_api.extract_last_message_in_thread(thread)
     message_id_of_last_email = gmail_api.extract_message_header_value(
         message = last_email_in_thread,

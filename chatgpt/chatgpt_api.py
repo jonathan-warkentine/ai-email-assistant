@@ -29,15 +29,17 @@ class Chatgpt_api:
             print("Error fetching ChatGPT response: ", e)
 
     def decide_if_messages_regard_job(self, messages):
-        messages_with_system_content = self.build_system_message(message_history=messages, custom_system_content=)
+        triage_incoming_email_prompt = self.data_store.read('triage_incoming_email_prompt')
+        system_message = self.build_system_message(content=triage_incoming_email_prompt)
+        combined_system_prompt_and_message_history = [system_message] + messages
         try:
             return self.client.ChatCompletion.create(
                 model = self.MODEL,
-                messages = messages,
+                messages = combined_system_prompt_and_message_history,
                 temperature=0,
             )
         except BaseException as e:
-            print("Error fetching ChatGPT response: ", e)
+            print("Error fetching ChatGPT response for message triage: ", e)
 
     def attach_system_content_to_message_history(self, message_history, custom_system_content):
         all_system_content = self.build_system_content(custom_system_content = custom_system_content)
