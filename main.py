@@ -42,9 +42,6 @@ WORK_END = datetime.strptime("6:00 PM", "%I:%M %p").time()
 def convert_to_readable_date(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %d')
 
-def convert_time_24_to_12(hour, minute):
-    return datetime.strptime(f"{hour}:{minute}", "%H:%M").strftime('%I:%M %p')
-
 def get_sorted_times_from_busy_blocks(busy_blocks, date):
     times = []
     for block in busy_blocks:
@@ -89,7 +86,7 @@ availability_string = get_availability_string(busy_blocks)
 
 scheduling_parameters = {
     'role' : 'system',
-    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Here are your available slots:\n{availability_string}\n\nWhen responding to customers, refer to tomorrow\'s date as "tomorrow" '
+    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Here are your available slots:\n{availability_string}\n\nWhen responding to customers, refer to tomorrow\'s date as "tomorrow", and specify "this week" or "next week" as necessary.'
 }
 
 ######################################################################################
