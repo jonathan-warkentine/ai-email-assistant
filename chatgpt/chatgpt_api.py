@@ -26,8 +26,19 @@ class Chatgpt_api:
                 temperature=0,
             )
         except BaseException as e:
-            print("Error with OpenAI API call: ", e)
-    
+            print("Error fetching ChatGPT response: ", e)
+
+    def decide_if_messages_regard_job(self, messages):
+        messages_with_system_content = self.build_system_message(message_history=messages, custom_system_content=)
+        try:
+            return self.client.ChatCompletion.create(
+                model = self.MODEL,
+                messages = messages,
+                temperature=0,
+            )
+        except BaseException as e:
+            print("Error fetching ChatGPT response: ", e)
+
     def attach_system_content_to_message_history(self, message_history, custom_system_content):
         all_system_content = self.build_system_content(custom_system_content = custom_system_content)
         combined_message_history_and_system_content = all_system_content + message_history

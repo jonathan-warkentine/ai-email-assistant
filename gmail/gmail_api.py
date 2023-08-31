@@ -80,7 +80,7 @@ class Gmail_api:
             return request.execute()
         
         except errors.HttpError as e:
-            print(f"An error occurred fetching threads: {e}")
+            print(f"An error occurred fetching threads from Gmail: {e}")
 
     def filter_threads_needing_response(self, threads):
         """
@@ -128,6 +128,11 @@ class Gmail_api:
         return message_exchange
 
     def prepare_messages_for_chatgpt(self, messages):
+        """
+        Process a list of email messages fetched from the Gmail API and prepares them 
+        in a format suitable for chat. It distinguishes between the 'user' and the 
+        'assistant' based on the email sender.
+        """
         message_exchange = list()
 
         for message in messages:
@@ -140,11 +145,20 @@ class Gmail_api:
                 )
 
                 role = 'assistant' if sender_email == self.user else 'user'
+                
+                parts = message['payload'].get('parts', [])
+                
+                # First try to find a text/plain part
+                text_parts = [part for part in parts if is_text_part(part)]
 
-                if 'parts' in message['payload']:
-                    for part in message['payload']['parts']:
+                if text_parts:
+                    # Use only the first text/plain part found
+                    message_exchange.extend(self.process_part(text_parts[0], role))
+                elif parts:  # If no text/plain part was found, process all other parts
+                    for part in parts:
                         message_exchange.extend(self.process_part(part, role))
                 else:
+                    # If there are no parts, decode the message directly
                     data = message['payload']['body']['data']
                     text = base64.urlsafe_b64decode(data).decode('utf-8')
                     message_exchange.append({"role": role, "content": strip_quoted_text(text)})
@@ -179,8 +193,6 @@ class Gmail_api:
             print(f"Reverting to a full synchronization of the Gmail client; any new messages will be disregarded.")
             self.synchronize_gmail_client()
             return self.fetch_new_histories()
-
-
 
     def parse_new_messages_from_histories(self, histories):
         """
@@ -270,3 +282,7 @@ class Gmail_api:
         for header in headers:
             if header['name'] == header_name:
                 return header['value']
+
+def is_text_part(part):
+    # Return True if the part is plain text, False otherwise
+    return part.get("mimeType") == "text/plain"

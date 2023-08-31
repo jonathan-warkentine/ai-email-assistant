@@ -70,7 +70,7 @@ docker pull your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
 ```
 7. Run your Docker image:
 ```shell
-docker run -d -p 80:80 your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
+docker run -d your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
 ```
 
 All set!
