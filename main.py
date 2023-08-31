@@ -42,6 +42,10 @@ WORK_END = datetime.strptime("6:00 PM", "%I:%M %p").time()
 def convert_to_readable_date(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %d')
 
+def format_time(t):
+    formatted_time = t.strftime('%I:%M %p') if t.minute != 0 else t.strftime('%I %p')
+    return formatted_time.lstrip('0')  # Remove leading zero if any
+
 def get_sorted_times_from_busy_blocks(busy_blocks, date):
     times = []
     for block in busy_blocks:
@@ -72,11 +76,11 @@ def get_availability_string(busy_blocks):
                 continue  # Skip time slots that are within two hours for today
             
             if available_from != busy_start:
-                daily_availability.append(f"  - Available from: {available_from.strftime('%I:%M %p')} to {busy_start.strftime('%I:%M %p')}")
+                daily_availability.append(f"  - Available from: {format_time(available_from)} to {format_time(busy_start)}")
             available_from = datetime.strptime(end, "%I:%M %p").time()
         
         if available_from != WORK_END:
-            daily_availability.append(f"  - Available from: {available_from.strftime('%I:%M %p')} to {WORK_END.strftime('%I:%M %p')}")
+            daily_availability.append(f"  - Available from: {format_time(available_from)} to {format_time(WORK_END)}")
         
         availability.extend(daily_availability)
     
