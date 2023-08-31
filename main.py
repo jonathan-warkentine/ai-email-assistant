@@ -7,6 +7,8 @@ from workiz.workiz_api import Workiz_api
 from models.job import Job
 from utils.extract_email_from_text import extract_email_from_text
 from utils.convert_string_to_boolean import convert_string_to_boolean
+from utils.convert_time_24_to_12 import convert_time_24_to_12
+from datetime import datetime, timedelta
 
 ######################################################################################
 #                          Initialize our Gmail Client                               #
@@ -34,40 +36,60 @@ workiz_api = Workiz_api()
 ######################################################################################
 busy_blocks = workiz_api.get_busy_blocks()
 
-consolidated_blocks = defaultdict(dict)
+WORK_START = datetime.strptime("8:00 AM", "%I:%M %p").time()
+WORK_END = datetime.strptime("6:00 PM", "%I:%M %p").time()
 
-for busy_block in busy_blocks:
-    date = busy_block.get('start').split()[0]
-    start_time = ":".join(busy_block.get('start').split()[1].split(":")[:2])
-    end_time = ":".join(busy_block.get('end').split()[1].split(":")[:2])
+def convert_to_readable_date(date_str):
+    return datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %d')
+
+def convert_time_24_to_12(hour, minute):
+    return datetime.strptime(f"{hour}:{minute}", "%H:%M").strftime('%I:%M %p')
+
+def get_sorted_times_from_busy_blocks(busy_blocks, date):
+    times = []
+    for block in busy_blocks:
+        if convert_to_readable_date(block.get('start').split()[0]) == date:
+            start = convert_time_24_to_12(*map(int, block.get('start').split()[1].split(":")[:2]))
+            end = convert_time_24_to_12(*map(int, block.get('end').split()[1].split(":")[:2]))
+            times.append((start, end))
+    return sorted(times, key=lambda x: datetime.strptime(x[0], "%I:%M %p"))
+
+def get_availability_string(busy_blocks):
+    availability = []
+    current_datetime = datetime.now()
+    two_hours_from_now = current_datetime + timedelta(hours=2)
     
-    consolidated_blocks[date][start_time] = end_time
+    unique_dates = {convert_to_readable_date(block.get('start').split()[0]) for block in busy_blocks}
+    
+    for date in sorted(unique_dates):
+        if date == current_datetime.strftime('%B %d') and datetime.strptime(WORK_END.strftime('%I:%M %p'), "%I:%M %p").time() <= two_hours_from_now.time():
+            continue  # Skip today if the business end time is within two hours
+        
+        sorted_times = get_sorted_times_from_busy_blocks(busy_blocks, date)
+        daily_availability = [f"On {date}:"]  # Starting each date with a header
+        available_from = WORK_START
+        
+        for (start, end) in sorted_times:
+            busy_start = datetime.strptime(start, "%I:%M %p").time()
+            if date == current_datetime.strftime('%B %d') and busy_start <= two_hours_from_now.time():
+                continue  # Skip time slots that are within two hours for today
+            
+            if available_from != busy_start:
+                daily_availability.append(f"  - Available from: {available_from.strftime('%I:%M %p')} to {busy_start.strftime('%I:%M %p')}")
+            available_from = datetime.strptime(end, "%I:%M %p").time()
+        
+        if available_from != WORK_END:
+            daily_availability.append(f"  - Available from: {available_from.strftime('%I:%M %p')} to {WORK_END.strftime('%I:%M %p')}")
+        
+        availability.extend(daily_availability)
+    
+    return "\n".join(availability)
 
-# Merge logic
-for date, blocks in consolidated_blocks.items():
-    keys = sorted(blocks.keys())
-    i = 0
-    while i < len(keys) - 1:
-        current_end = blocks[keys[i]]
-        next_start = keys[i + 1]
-
-        if current_end == next_start:
-            blocks[keys[i]] = blocks[next_start]
-            del blocks[next_start]
-            keys = sorted(blocks.keys())
-        else:
-            i += 1
-
-ai_readable_strings = []
-for date in sorted(consolidated_blocks.keys()):
-    time_strings = [f"{start} to {consolidated_blocks[date][start]}" for start in sorted(consolidated_blocks[date])]
-    ai_readable_strings.append(f"On {date}, busy from: {' and '.join(time_strings)}")
-
-ai_readable_string = ". ".join(ai_readable_strings)
+availability_string = get_availability_string(busy_blocks)
 
 scheduling_parameters = {
     'role' : 'system',
-    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Customers have already booked appointments with you during the following slots: {ai_readable_string}. DO NOT DOUBLE BOOK CUSTOMERS DURING THESE SLOTS. Please use time and date formats that will feel natural to our working class customers.'
+    'content' : f'Your business hours are 8AM - 6PM Monday through Saturday. Here are your available slots:\n{availability_string}\n\nWhen responding to customers, refer to tomorrow\'s date as "tomorrow" '
 }
 
 ######################################################################################
