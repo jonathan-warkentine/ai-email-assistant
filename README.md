@@ -1,14 +1,32 @@
 # ai-email-assistant
 An AI powered email bot for small businesses that integrates with Workiz for client and lead creation, basic job quoting, as well as job scheduling.
 
+## Setup
+1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save it in the `gmail` directory as `service_account_key.json`.
+2. Obtain your API key for Workiz and save it as `workiz_credentials.json`:
+```json
+{ 
+    "api_token" : "api_xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+```
+3. Set your respective email in the `main.py` gmail client initialization. 
+
+## Run Python App Locally
+From the root:
+```shell
+pip install -r requirements.txt
+python main.py
+```
+
 ## Build in Docker and Push to AWS ECR
 To build for X86 on an ARM machine:
 
 ```shell
 # Create a new builder instance if you haven't already (you must have Docker installed on your machine)
-docker buildx create --use --name mybuilder
+docker buildx create --use --name <your-builder-name>
 
-# If you already have a builder, move on to the next steps below
+# Or if you already have a builder:
+docker buildx use <your-builder-name> 
 
 # Get a fresh authentication token for your local Docker (you must have AWS CLI installed on your machine)
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin <your_aws_ecr_url>
@@ -52,7 +70,7 @@ docker pull your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
 ```
 7. Run your Docker image:
 ```shell
-docker run -d -p 80:80 your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
+docker run -d your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
 ```
 
 All set!
