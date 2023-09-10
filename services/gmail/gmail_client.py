@@ -10,7 +10,7 @@ from utils.strip_quoted_text import strip_quoted_text
 
 import base64
 
-class Gmail_api:
+class Gmail_client:
     """
     Provides a set of functions to interact with the Gmail API.
     """

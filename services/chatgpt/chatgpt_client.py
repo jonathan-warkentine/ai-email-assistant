@@ -8,7 +8,7 @@ import os
 # Load environment variables
 load_dotenv()
 
-class Chatgpt_api:
+class Chatgpt_client:
     def __init__(self, model='gpt-4'):
         self.MODEL = model
         self.client = openai

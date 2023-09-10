@@ -1,40 +1,44 @@
-from google.auth.transport.requests import Request
+# Standard Libraries
+from datetime import datetime, timedelta
 from collections import defaultdict
 
-from gmail.gmail_api import Gmail_api
-from chatgpt.chatgpt_api import Chatgpt_api
-from workiz.workiz_api import Workiz_api
+# External Libraries
+from google.auth.transport.requests import Request
+
+# Internal Modules
+from gmail.gmail_client import Gmail_client
+from chatgpt.chatgpt_client import Chatgpt_client
+from workiz.workiz_client import Workiz_client
 from models.job import Job
 from utils.extract_email_from_text import extract_email_from_text
 from utils.convert_string_to_boolean import convert_string_to_boolean
 from utils.convert_time_24_to_12 import convert_time_24_to_12
-from datetime import datetime, timedelta
 
 ######################################################################################
 #                          Initialize our Gmail Client                               #
 ######################################################################################
-gmail_api = Gmail_api(
+gmail_client = Gmail_client(
     credentials_file_path='gmail/service_account_key.json', 
     scopes=['https://mail.google.com/'], 
-    user='automation@topdawgjunkremoval.com', 
+    user='info@topdawgjunkremoval.com', 
     data_store_filepath='./gmail/gmail.json'
 )
 
 ######################################################################################
 #                             Initialize our OpenAI Client                           #
 ######################################################################################
-chatgpt_api = Chatgpt_api()
+chatgpt_client = Chatgpt_client()
 
 ######################################################################################
 #                             Initialize our Workiz Client                           #
 ######################################################################################
-workiz_api = Workiz_api()
+workiz_client = Workiz_client()
 
 
 ######################################################################################
 #                     Obtain Scheduling Params for ChatGPT Prompt                    #
 ######################################################################################
-busy_blocks = workiz_api.get_busy_blocks()
+busy_blocks = workiz_client.get_busy_blocks()
 
 WORK_START = datetime.strptime("8:00 AM", "%I:%M %p").time()
 WORK_END = datetime.strptime("6:00 PM", "%I:%M %p").time()
@@ -96,31 +100,31 @@ scheduling_parameters = {
 ######################################################################################
 #                           FETCH NEW MESSAGES IN GMAIL                              #
 ######################################################################################
-threads_with_new_messages = gmail_api.fetch_threads_with_new_messages()
-threads_needing_response = gmail_api.filter_threads_needing_response(threads_with_new_messages)
+threads_with_new_messages = gmail_client.fetch_threads_with_new_messages()
+threads_needing_response = gmail_client.filter_threads_needing_response(threads_with_new_messages)
 
 # Prepare thread as conversation for ChatGPT API call ('messages' parameter)
 jobs = list()
 for thread in threads_needing_response:
-    messages = gmail_api.parse_thread_for_messages(thread)
-    prepared_messages = gmail_api.prepare_messages_for_chatgpt(messages=messages)
-    messages_regard_job_chatgpt_response = chatgpt_api.decide_if_messages_regard_job(prepared_messages)
+    messages = gmail_client.parse_thread_for_messages(thread)
+    prepared_messages = gmail_client.prepare_messages_for_chatgpt(messages=messages)
+    messages_regard_job_chatgpt_response = chatgpt_client.decide_if_messages_regard_job(prepared_messages)
     messages_regard_job_as_boolean = convert_string_to_boolean(messages_regard_job_chatgpt_response.get('choices')[0].get('message').get('content'))
 
     if messages_regard_job_as_boolean == False:
         continue
 
-    last_email_in_thread = gmail_api.extract_last_message_in_thread(thread)
-    message_id_of_last_email = gmail_api.extract_message_header_value(
+    last_email_in_thread = gmail_client.extract_last_message_in_thread(thread)
+    message_id_of_last_email = gmail_client.extract_message_header_value(
         message = last_email_in_thread,
         header_name = 'Message-Id'
     )
-    subject_of_last_email = gmail_api.extract_message_header_value(
+    subject_of_last_email = gmail_client.extract_message_header_value(
         message = last_email_in_thread,
         header_name = 'Subject'
     )
     email_address_of_sender_of_last_email = extract_email_from_text(
-        gmail_api.extract_message_header_value(
+        gmail_client.extract_message_header_value(
             message = last_email_in_thread,
             header_name = 'From'
         )
@@ -140,13 +144,13 @@ for thread in threads_needing_response:
     ################################################
 
 for job in jobs:
-    chatgpt_response = chatgpt_api.fetch_chatgpt_response(messages = job.conversation, custom_system_content = scheduling_parameters)
+    chatgpt_response = chatgpt_client.fetch_chatgpt_response(messages = job.conversation, custom_system_content = scheduling_parameters)
     message_text = chatgpt_response.get('choices')[0].get('message').get('content')
-    email_draft = gmail_api.compose_email(
+    email_draft = gmail_client.compose_email(
         recipient = job.recipient, 
         subject = job.subject, 
         message_text = message_text, 
         thread_id = job.thread.get('id'),
         in_reply_to = job.in_reply_to
     )
-    gmail_api.save_email_draft(email_draft)
+    gmail_client.save_email_draft(email_draft)

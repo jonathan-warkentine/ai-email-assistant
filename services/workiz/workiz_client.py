@@ -2,7 +2,7 @@ from utils.data_util import Data_store
 
 import requests
 
-class Workiz_api:
+class Workiz_client:
     def __init__(self):
         self.credentials = Data_store('./workiz/workiz_credentials.json')
         self.api_token = self.credentials.read('api_token')
