@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
-from utils.data_util import Data_store
-from utils.now import now
+from app_data.data_util import Data_store
+from utils.date_time_utils.now import now
 
 import openai
 import os

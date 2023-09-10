@@ -2,11 +2,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
-from utils.data_util import Data_store
+from app_data.data_util import Data_store
 from utils.deduplicate_list import deduplicate_list 
-from utils.extract_email_from_text import extract_email_from_text
-from utils.convert_line_breaks_to_html import convert_line_breaks_to_html
-from utils.strip_quoted_text import strip_quoted_text
+from utils.email_utils.extract_email_from_text import extract_email_from_text
+from utils.email_utils.convert_line_breaks_to_html import convert_line_breaks_to_html
+from utils.email_utils.strip_quoted_text import strip_quoted_text
 
 import base64
 

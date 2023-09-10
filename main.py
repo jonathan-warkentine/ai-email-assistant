@@ -6,16 +6,15 @@ from collections import defaultdict
 from google.auth.transport.requests import Request
 
 # Internal Modules
-from gmail.gmail_client import Gmail_client
-from chatgpt.chatgpt_client import Chatgpt_client
-from workiz.workiz_client import Workiz_client
+from services.gmail.gmail_client import Gmail_client
+from services.chatgpt.chatgpt_client import Chatgpt_client
+from services.workiz.workiz_client import Workiz_client
 from models.job import Job
-from utils.extract_email_from_text import extract_email_from_text
+from utils.date_time_utils import convert_time_24_to_12, format_date_to_month_day
 from utils.convert_string_to_boolean import convert_string_to_boolean
-from utils.convert_time_24_to_12 import convert_time_24_to_12
 
 ######################################################################################
-#                          Initialize our Gmail Client                               #
+#                              Initialize Clients                                    #
 ######################################################################################
 gmail_client = Gmail_client(
     credentials_file_path='gmail/service_account_key.json', 
@@ -24,14 +23,8 @@ gmail_client = Gmail_client(
     data_store_filepath='./gmail/gmail.json'
 )
 
-######################################################################################
-#                             Initialize our OpenAI Client                           #
-######################################################################################
 chatgpt_client = Chatgpt_client()
 
-######################################################################################
-#                             Initialize our Workiz Client                           #
-######################################################################################
 workiz_client = Workiz_client()
 
 
@@ -43,17 +36,11 @@ busy_blocks = workiz_client.get_busy_blocks()
 WORK_START = datetime.strptime("8:00 AM", "%I:%M %p").time()
 WORK_END = datetime.strptime("6:00 PM", "%I:%M %p").time()
 
-def convert_to_readable_date(date_str):
-    return datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %d')
-
-def format_time(t):
-    formatted_time = t.strftime('%I:%M %p') if t.minute != 0 else t.strftime('%I %p')
-    return formatted_time.lstrip('0')  # Remove leading zero if any
 
 def get_sorted_times_from_busy_blocks(busy_blocks, date):
     times = []
     for block in busy_blocks:
-        if convert_to_readable_date(block.get('start').split()[0]) == date:
+        if format_date_to_month_day(block.get('start').split()[0]) == date:
             start = convert_time_24_to_12(*map(int, block.get('start').split()[1].split(":")[:2]))
             end = convert_time_24_to_12(*map(int, block.get('end').split()[1].split(":")[:2]))
             times.append((start, end))
@@ -64,7 +51,7 @@ def get_availability_string(busy_blocks):
     current_datetime = datetime.now()
     two_hours_from_now = current_datetime + timedelta(hours=2)
     
-    unique_dates = {convert_to_readable_date(block.get('start').split()[0]) for block in busy_blocks}
+    unique_dates = {format(block.get('start').split()[0]) for block in busy_blocks}
     
     for date in sorted(unique_dates):
         if date == current_datetime.strftime('%B %d') and datetime.strptime(WORK_END.strftime('%I:%M %p'), "%I:%M %p").time() <= two_hours_from_now.time():

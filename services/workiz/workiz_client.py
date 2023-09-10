@@ -1,4 +1,4 @@
-from utils.data_util import Data_store
+from app_data.data_util import Data_store
 
 import requests
 
