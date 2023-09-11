@@ -6,6 +6,7 @@ from collections import defaultdict
 from google.auth.transport.requests import Request
 
 # Internal Modules
+from config import config_loader
 from services.gmail.gmail_client import Gmail_client
 from services.chatgpt.chatgpt_client import Chatgpt_client
 from services.workiz.workiz_client import Workiz_client
@@ -14,10 +15,16 @@ from utils.date_time_utils import convert_time_24_to_12, format_date_to_month_da
 from utils.convert_string_to_boolean import convert_string_to_boolean
 
 ######################################################################################
+#                            Initialize Configuration                                #
+######################################################################################
+config_data = config_loader.load_yaml('config/config.yaml')
+
+######################################################################################
 #                              Initialize Clients                                    #
 ######################################################################################
+gmail_config = config_data['gmail_config']
 gmail_client = Gmail_client(
-    credentials_file_path='gmail/service_account_key.json', 
+    credentials_filepath=gmail_config['credentials_filepath'], 
     scopes=['https://mail.google.com/'], 
     user='info@topdawgjunkremoval.com', 
     data_store_filepath='./gmail/gmail.json'
