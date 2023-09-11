@@ -23,14 +23,14 @@ class Workiz_client:
         except BaseException as e:
             print(f"An error occurred: {e}")
     
-    def get_busy_blocks(self):
+    def get_scheduled_appointments(self):
         jobs = self.get_jobs()
-        busy_blocks = list()
+        scheduled_appointments = list()
         for job in jobs:
             job_start = job.get('JobDateTime')
             job_end = job.get('JobEndDateTime')
-            busy_blocks.append({
+            scheduled_appointments.append({
                 'start' : job_start,
                 'end' : job_end
             })
-        return busy_blocks
+        return scheduled_appointments

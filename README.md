@@ -2,23 +2,26 @@
 An AI powered email bot for small businesses that integrates with Workiz for client and lead creation, basic job quoting, as well as job scheduling.
 
 ## Setup
-1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save it in the `gmail` directory as `service_account_key.json`.
-2. Obtain your API key for Workiz and save it as `workiz_credentials.json`:
+1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save it in the `config/credentials` directory as `gmail_credentials.json`.
+2. Obtain your API key for Workiz and save it as `workiz_credentials.json` in the same `config/credentials` directory:
 ```json
 { 
     "api_token" : "api_xxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }
 ```
-3. Set your respective email in the `main.py` gmail client initialization. 
+3. In `config/config.yaml`, set the email of the account in your workspace for which this AI bot will be generating emails.
 
-## Run Python App Locally
+## Running Locally
 From the root:
 ```shell
 pip install -r requirements.txt
 python main.py
 ```
 
-## Build in Docker and Push to AWS ECR
+## Deploy
+
+### Build in Docker and Push to AWS ECR
+
 To build for X86 on an ARM machine:
 
 ```shell
@@ -37,7 +40,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t <aws_ecr_url>/<project
 
 
 
-## Deploy in an EC2 Instance
+### Deploy in an EC2 Instance
 1. Create your EC2 instance. SSH into that instance.
 2. Install and start Docker, ensure that it starts on boot:
 ```shell
