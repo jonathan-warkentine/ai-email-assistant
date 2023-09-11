@@ -1,7 +1,7 @@
 import yaml
 import os
 
-def curry_config_parser(filename='/config/config.yaml'):
+def curry_config_parser(filename='config/config.yaml'):
     """
     Initializes a curried YAML parser for the given filename.
     
@@ -28,7 +28,7 @@ def curry_config_parser(filename='/config/config.yaml'):
         with open(filename, 'r') as file:
             data = yaml.safe_load(file)
     except FileNotFoundError:
-        print(f"\nERROR: File {os.getcwd()}{filename} not found. Make sure {filename}'s extension matches (.yaml/.yml) the config file.\n")
+        print(f"\nERROR: File {os.getcwd()}/{filename} not found. Make sure {filename}'s extension matches (.yaml/.yml) the config file.\n")
         return None
 
     def parse_prefix(yaml_prefix):
