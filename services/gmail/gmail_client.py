@@ -4,9 +4,7 @@ from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from app_data.data_util import Data_store
 from utils.deduplicate_list import deduplicate_list 
-from utils.email_utils.extract_email_from_text import extract_email_from_text
-from utils.email_utils.convert_line_breaks_to_html import convert_line_breaks_to_html
-from utils.email_utils.strip_quoted_text import strip_quoted_text
+from utils.email_utils import extract_email_address_from_text, convert_line_breaks_to_html, strip_quoted_text
 
 import base64
 
@@ -82,19 +80,19 @@ class Gmail_client:
         except errors.HttpError as e:
             print(f"An error occurred fetching threads from Gmail: {e}")
 
-    def filter_threads_needing_response(self, threads):
+    def filter_threads_awaiting_response(self, threads):
         """
-        Filters Gmail threads that need a response from the authenticated user.
+        Filters Gmail threads that have not yet been replied to.
 
         :param threads: List of Gmail threads.
         :return: Filtered list of Gmail threads that need a response.
         """
-        threads_needing_response = list()
+        threads_awaiting_response = list()
 
         for thread in threads:
             last_message = self.extract_last_message_in_thread(thread)
             
-            sender_email = extract_email_from_text(
+            sender_email = extract_email_address_from_text(
                 self.extract_message_header_value(
                     message=last_message,
                     header_name='From'
@@ -103,9 +101,9 @@ class Gmail_client:
 
             # Check if the sender is not the authenticated user
             if sender_email != self.user:
-                threads_needing_response.append(thread)
+                threads_awaiting_response.append(thread)
 
-        return threads_needing_response
+        return threads_awaiting_response
 
     def extract_last_message_in_thread(self, thread):
         return thread['messages'][-1]
@@ -137,7 +135,7 @@ class Gmail_client:
 
         for message in messages:
             try:
-                sender_email = extract_email_from_text(
+                sender_email = extract_email_address_from_text(
                     self.extract_message_header_value(
                         message=message,
                         header_name='From'

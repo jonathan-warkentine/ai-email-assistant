@@ -20,13 +20,14 @@ class Chatgpt_client:
         messages_with_system_content = self.attach_system_content_to_message_history(message_history = messages, custom_system_content = custom_system_content)
         print(messages_with_system_content)
         try:
-            return self.client.ChatCompletion.create(
+            response = self.client.ChatCompletion.create(
                 model = self.MODEL,
                 messages = messages_with_system_content,
                 temperature=0,
             )
+            return self.extract_response_message(response)
         except BaseException as e:
-            print("Error fetching ChatGPT response: ", e)
+            print("\nERROR fetching ChatGPT response: ", e, "\n")
 
     def decide_if_messages_regard_job(self, messages):
         triage_incoming_email_prompt = self.data_store.read('triage_incoming_email_prompt')
@@ -39,7 +40,7 @@ class Chatgpt_client:
                 temperature=0,
             )
         except BaseException as e:
-            print("Error fetching ChatGPT response for message triage: ", e)
+            print("\nERROR fetching ChatGPT response for message triage: ", e, "\n")
 
     def attach_system_content_to_message_history(self, message_history, custom_system_content):
         all_system_content = self.build_system_content(custom_system_content = custom_system_content)
@@ -64,3 +65,6 @@ class Chatgpt_client:
     def build_datetime(self):
         now_datetime = now()
         return self.build_system_message(f'Current date and time is {now_datetime}')
+    
+    def extract_response_message(self, chatgpt_response):
+        return chatgpt_response.get('choices')[0].get('message').get('content')

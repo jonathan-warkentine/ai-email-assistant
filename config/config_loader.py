@@ -1,6 +1,7 @@
 import yaml
+import os
 
-def curry_config_parser(filename='config.yaml'):
+def curry_config_parser(filename='/config/config.yaml'):
     """
     Initializes a curried YAML parser for the given filename.
     
@@ -27,7 +28,7 @@ def curry_config_parser(filename='config.yaml'):
         with open(filename, 'r') as file:
             data = yaml.safe_load(file)
     except FileNotFoundError:
-        print(f"Error: File {filename} not found.")
+        print(f"\nERROR: File {os.getcwd()}{filename} not found. Make sure {filename}'s extension matches (.yaml/.yml) the config file.\n")
         return None
 
     def parse_prefix(yaml_prefix):
@@ -46,7 +47,7 @@ def curry_config_parser(filename='config.yaml'):
         nonlocal data
 
         if yaml_prefix not in data:
-            print(f"Error: Prefix {yaml_prefix} not found in {filename}.")
+            print(f"\nERROR: Prefix {yaml_prefix} not found in {filename}.\n")
             return None
 
         data = data[yaml_prefix]

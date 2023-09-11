@@ -1,36 +1,40 @@
 # External Libraries
 from google.auth.transport.requests import Request
+import time
+import logging
 
 # Internal Modules
-from config.config_loader import curry_config_parser
+from initializers import initialize_clients, initialize_controllers
 
-from services.chatgpt.chatgpt_client import Chatgpt_client
-from services.gmail.gmail_client import Gmail_client
-from services.workiz.workiz_client import Workiz_client
-
-from controllers.scheduling_controller import get_scheduling_parameters_as_chatgpt_system_prompt
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 
-######################################################################################
-#                              Initialize Clients                                    #
-######################################################################################
-gmail_config = curry_config_parser()('gmail')
-gmail_client = Gmail_client(
-    credentials_filepath=gmail_config('credentials_filepath') 
-    scopes=gmail_config('scopes'),
-    user=gmail_config('user'), 
-    data_store_filepath=gmail_config('data_store_filepath')
-)
+def main():
+    # Initialize clients
+    gmail_client, chatgpt_client, workiz_client = initialize_clients()
 
-chatgpt_client = Chatgpt_client()
-workiz_client = Workiz_client()
+    # Initialize controllers
+    scheduling_ctrl, email_ctrl, job_ctrl = initialize_controllers(gmail_client, chatgpt_client, workiz_client)
 
+    return
+    # Continuous loop for business logic
+    while True:
+        try:
+            logging.info("Fetching scheduling parameters...")
+            scheduling_parameters = scheduling_ctrl.get_scheduling_parameters_as_chatgpt_system_prompt()
+            
+            logging.info("Generating jobs from threads...")
+            jobs = job_ctrl.generate_jobs_from_threads(scheduling_parameters)
+            
+            logging.info("Drafting email responses...")
+            email_ctrl.draft_responses(jobs)
 
-######################################################################################
-#                     Obtain Scheduling Params for ChatGPT Prompt                    #
-######################################################################################
-get_scheduling_parameters_as_chatgpt_system_prompt(workiz_client)
+            logging.info("Business logic executed successfully. Waiting for the next cycle...")
+        except Exception as e:
+            logging.error(f"\nERROR during business logic execution: {e}\n")
+        
+        time.sleep(300)
 
-######################################################################################
-#                           FETCH NEW MESSAGES IN GMAIL                              #
-######################################################################################
+if __name__ == "__main__":
+    main()
