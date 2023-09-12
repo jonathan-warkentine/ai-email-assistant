@@ -13,21 +13,16 @@ class Gmail_client:
     Provides a set of functions to interact with the Gmail API.
     """
 
-    def __init__(self, credentials_filepath, scopes=['https://mail.google.com/'], user='me', data_store_filepath='./gmail.json'):
+    def __init__(self, config):
         """
         Initializes the Gmail API client with the provided credentials.
 
-        :param credentials_filepath: Path to the credentials file for Gmail API access.
-        :param scopes: List of Gmail API scopes.
-        :param user: Email address of the user, default is 'me' which is the authenticated user.
-        :param data_store_filepath: Path to the file for storing data.
+        :param config: curried config parse function containing all needed configs
         """
-        self.user = user
-        self.data_store = Data_store(data_store_filepath)
-        self.credentials = service_account.Credentials.from_service_account_file(
-            credentials_filepath, scopes=scopes
-        )
-        self.delegated_credentials = self.credentials.with_subject(user)
+        self.user = config('user')
+        self.data_store = Data_store(config('data_store_filepath'))
+        self.credentials = service_account.Credentials.from_service_account_info(config('credentials', return_dicts=True), scopes=config('client_scopes'))
+        self.delegated_credentials = self.credentials.with_subject(self.user)
         self.client = discovery.build('gmail', 'v1', credentials=self.delegated_credentials)
 
     def synchronize_gmail_client(self):
