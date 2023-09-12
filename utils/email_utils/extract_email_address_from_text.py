@@ -1,6 +1,6 @@
 import re
 
-def extract_email_from_text(text):
+def extract_email_address_from_text(text):
     # Regular expression for matching an email
     match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
     if match:

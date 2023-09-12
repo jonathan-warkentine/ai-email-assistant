@@ -2,34 +2,27 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
-from utils.data_util import Data_store
+from app_data.data_util import Data_store
 from utils.deduplicate_list import deduplicate_list 
-from utils.extract_email_from_text import extract_email_from_text
-from utils.convert_line_breaks_to_html import convert_line_breaks_to_html
-from utils.strip_quoted_text import strip_quoted_text
+from utils.email_utils import extract_email_address_from_text, convert_line_breaks_to_html, strip_quoted_text
 
 import base64
 
-class Gmail_api:
+class Gmail_client:
     """
     Provides a set of functions to interact with the Gmail API.
     """
 
-    def __init__(self, credentials_file_path, scopes=['https://mail.google.com/'], user='me', data_store_filepath='./gmail.json'):
+    def __init__(self, config):
         """
         Initializes the Gmail API client with the provided credentials.
 
-        :param credentials_file_path: Path to the credentials file for Gmail API access.
-        :param scopes: List of Gmail API scopes.
-        :param user: Email address of the user, default is 'me' which is the authenticated user.
-        :param data_store_filepath: Path to the file for storing data.
+        :param config: curried config parse function containing all needed configs
         """
-        self.user = user
-        self.data_store = Data_store(data_store_filepath)
-        self.credentials = service_account.Credentials.from_service_account_file(
-            credentials_file_path, scopes=scopes
-        )
-        self.delegated_credentials = self.credentials.with_subject(user)
+        self.user = config('user')
+        self.data_store = Data_store(config('data_store_filepath'))
+        self.credentials = service_account.Credentials.from_service_account_info(config('credentials', return_dicts=True), scopes=config('client_scopes'))
+        self.delegated_credentials = self.credentials.with_subject(self.user)
         self.client = discovery.build('gmail', 'v1', credentials=self.delegated_credentials)
 
     def synchronize_gmail_client(self):
@@ -82,19 +75,19 @@ class Gmail_api:
         except errors.HttpError as e:
             print(f"An error occurred fetching threads from Gmail: {e}")
 
-    def filter_threads_needing_response(self, threads):
+    def filter_threads_awaiting_response(self, threads):
         """
-        Filters Gmail threads that need a response from the authenticated user.
+        Filters Gmail threads that have not yet been replied to.
 
         :param threads: List of Gmail threads.
         :return: Filtered list of Gmail threads that need a response.
         """
-        threads_needing_response = list()
+        threads_awaiting_response = list()
 
         for thread in threads:
             last_message = self.extract_last_message_in_thread(thread)
             
-            sender_email = extract_email_from_text(
+            sender_email = extract_email_address_from_text(
                 self.extract_message_header_value(
                     message=last_message,
                     header_name='From'
@@ -103,9 +96,9 @@ class Gmail_api:
 
             # Check if the sender is not the authenticated user
             if sender_email != self.user:
-                threads_needing_response.append(thread)
+                threads_awaiting_response.append(thread)
 
-        return threads_needing_response
+        return threads_awaiting_response
 
     def extract_last_message_in_thread(self, thread):
         return thread['messages'][-1]
@@ -137,7 +130,7 @@ class Gmail_api:
 
         for message in messages:
             try:
-                sender_email = extract_email_from_text(
+                sender_email = extract_email_address_from_text(
                     self.extract_message_header_value(
                         message=message,
                         header_name='From'

@@ -1,11 +1,10 @@
-from utils.data_util import Data_store
+from app_data.data_util import Data_store
 
 import requests
 
-class Workiz_api:
-    def __init__(self):
-        self.credentials = Data_store('./workiz/workiz_credentials.json')
-        self.api_token = self.credentials.read('api_token')
+class Workiz_client:
+    def __init__(self, config):
+        self.api_token = config('credentials')('api_token')
     
     def get_jobs(self):
         try:
@@ -23,14 +22,14 @@ class Workiz_api:
         except BaseException as e:
             print(f"An error occurred: {e}")
     
-    def get_busy_blocks(self):
+    def get_scheduled_appointments(self):
         jobs = self.get_jobs()
-        busy_blocks = list()
+        scheduled_appointments = list()
         for job in jobs:
             job_start = job.get('JobDateTime')
             job_end = job.get('JobEndDateTime')
-            busy_blocks.append({
+            scheduled_appointments.append({
                 'start' : job_start,
                 'end' : job_end
             })
-        return busy_blocks
+        return scheduled_appointments
