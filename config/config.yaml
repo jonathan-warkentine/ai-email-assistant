@@ -2,8 +2,7 @@ app_run_interval: 30
 
 gmail:
   user: "automation@topdawgjunkremoval.com"
-  client_scopes:
-    - "https://mail.google.com/"
+  client_scopes: ["https://mail.google.com/"]
   data_store_filepath: "app_data/gmail.json"
 
 chatgpt:

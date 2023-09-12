@@ -2,14 +2,9 @@
 An AI powered email bot for small businesses that integrates with Workiz for client and lead creation, basic job quoting, as well as job scheduling.
 
 ## Setup
-1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save it in the `config/credentials` directory as `gmail_credentials.json`.
-2. Obtain your API key for Workiz and save it as `workiz_credentials.json` in the same `config/credentials` directory:
-```json
-{ 
-    "api_token" : "api_xxxxxxxxxxxxxxxxxxxxxxxxxxx"
-}
-```
-3. In `config/config.yaml`, set the email of the account in your workspace for which this AI bot will be generating emails.
+1. After setting up a service account with API access to your Workspace's Gmail, obtain the `service account key` for this account and save the contents in a `config/credentials.yaml` file. The values should be nested under `gmail.credentials` (more info in the README within `configs` dir).
+2. Obtain your API key for Workiz and save it in the same `config/credentials.yaml` file, under `workiz.credentials`.
+3. In `config/config.yaml`, set the appropriate  of the account in your workspace for which this AI bot will be generating emails.
 
 ## Running Locally
 From the root:
