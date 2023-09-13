@@ -21,7 +21,7 @@ def main():
 
             if threads:
                 logging.info("Fetching scheduling parameters...")
-                scheduling_parameters = scheduling_ctrl.get_scheduling_parameters_as_chatgpt_system_prompt(workiz_client)
+                scheduling_parameters = scheduling_ctrl.get_scheduling_parameters()
 
                 logging.info("Generating jobs from threads...")
                 jobs = job_ctrl.generate_jobs_from_threads(threads)
