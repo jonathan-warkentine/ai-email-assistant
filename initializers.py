@@ -29,9 +29,9 @@ def initialize_clients(configs):
         logging.error(f"Failed to initialize clients: {e}")
         raise
 
-def initialize_controllers(gmail_client, chatgpt_client, workiz_client):
+def initialize_controllers(gmail_client, chatgpt_client, workiz_client, configs):
     scheduling_ctrl = Scheduling_controller(workiz_client)
     email_ctrl = Email_controller(gmail_client)
-    job_ctrl = Job_controller(gmail_client, chatgpt_client)
+    job_ctrl = Job_controller(gmail_client, chatgpt_client, configs)
 
     return scheduling_ctrl, email_ctrl, job_ctrl

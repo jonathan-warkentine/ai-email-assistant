@@ -4,7 +4,7 @@ from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from app_data.data_util import Data_store
 from utils.deduplicate_list import deduplicate_list 
-from utils.email_utils import extract_email_address_from_text, convert_line_breaks_to_html, strip_quoted_text
+from utils.email_utils import extract_email_address_from_text, convert_line_breaks_to_html, strip_quoted_text, extract_last_message_in_thread, extract_message_header_value
 
 import base64
 
@@ -85,10 +85,10 @@ class Gmail_client:
         threads_awaiting_response = list()
 
         for thread in threads:
-            last_message = self.extract_last_message_in_thread(thread)
+            last_message = extract_last_message_in_thread(thread)
             
             sender_email = extract_email_address_from_text(
-                self.extract_message_header_value(
+                extract_message_header_value(
                     message=last_message,
                     header_name='From'
                 )
@@ -100,74 +100,22 @@ class Gmail_client:
 
         return threads_awaiting_response
 
-    def extract_last_message_in_thread(self, thread):
-        return thread['messages'][-1]
+    def save_email_draft(self, email):
+        try:
+            wrapped_email = {
+            'message': email
+            }
+            self.client.users().drafts().create(userId="me", body=wrapped_email).execute()
 
-    def parse_thread_for_messages(self, thread):
-        return thread.get('messages')
+        except errors.HttpError as e:
+            print(F'An error occurred saving email draft: {e}')
 
-    def process_part(self, part, role):
-        message_exchange = list()
-        mime_types = ['text/plain', 'text/html']
-
-        if part['mimeType'] in mime_types:
-            data = part['body']['data']
-            text = base64.urlsafe_b64decode(data).decode('utf-8')
-            message_exchange.append({"role": role, "content": strip_quoted_text(text)})
-        elif part['mimeType'] == 'multipart/mixed':
-            for subpart in part['parts']:
-                message_exchange.extend(self.process_part(subpart, role))
-
-        return message_exchange
-
-    def prepare_messages_for_chatgpt(self, messages):
-        """
-        Process a list of email messages fetched from the Gmail API and prepares them 
-        in a format suitable for chat. It distinguishes between the 'user' and the 
-        'assistant' based on the email sender.
-        """
-        message_exchange = list()
-
-        for message in messages:
-            try:
-                sender_email = extract_email_address_from_text(
-                    self.extract_message_header_value(
-                        message=message,
-                        header_name='From'
-                    )
-                )
-
-                role = 'assistant' if sender_email == self.user else 'user'
-                
-                parts = message['payload'].get('parts', [])
-                
-                # First try to find a text/plain part
-                text_parts = [part for part in parts if is_text_part(part)]
-
-                if text_parts:
-                    # Use only the first text/plain part found
-                    message_exchange.extend(self.process_part(text_parts[0], role))
-                elif parts:  # If no text/plain part was found, process all other parts
-                    for part in parts:
-                        message_exchange.extend(self.process_part(part, role))
-                else:
-                    # If there are no parts, decode the message directly
-                    data = message['payload']['body']['data']
-                    text = base64.urlsafe_b64decode(data).decode('utf-8')
-                    message_exchange.append({"role": role, "content": strip_quoted_text(text)})
-
-            except KeyError:
-                continue
-
-        return message_exchange
-
-            
     def fetch_new_message_thread_ids(self):
         new_message_thread_ids = list()
         new_histories = self.fetch_new_histories()
         if (new_histories != None):
-            new_messages = self.parse_new_messages_from_histories(new_histories)
-            new_message_thread_ids = self.parse_message_thread_ids_from_messages(new_messages)
+            new_messages = self._parse_new_messages_from_histories(new_histories)
+            new_message_thread_ids = self._parse_message_thread_ids_from_messages(new_messages)
 
         return new_message_thread_ids
 
@@ -187,7 +135,24 @@ class Gmail_client:
             self.synchronize_gmail_client()
             return self.fetch_new_histories()
 
-    def parse_new_messages_from_histories(self, histories):
+    def _parse_thread_for_messages(self, thread):
+        return thread.get('messages')
+
+    def _process_part(self, part, role):
+        message_exchange = list()
+        mime_types = ['text/plain', 'text/html']
+
+        if part['mimeType'] in mime_types:
+            data = part['body']['data']
+            text = base64.urlsafe_b64decode(data).decode('utf-8')
+            message_exchange.append({"role": role, "content": strip_quoted_text(text)})
+        elif part['mimeType'] == 'multipart/mixed':
+            for subpart in part['parts']:
+                message_exchange.extend(self._process_part(subpart, role))
+
+        return message_exchange
+
+    def _parse_new_messages_from_histories(self, histories):
         """
         Extracts new messages from the provided Gmail histories.
 
@@ -205,7 +170,7 @@ class Gmail_client:
         
         return messages
     
-    def parse_message_thread_ids_from_messages(self, messages):
+    def _parse_message_thread_ids_from_messages(self, messages):
         message_thread_ids = list()
         for message in messages:
             message_thread_ids.append(message.get('threadId'))
@@ -213,7 +178,7 @@ class Gmail_client:
         return deduplicate_list(message_thread_ids)
 
     # TODO: convert to multipart mime type if including attachments
-    def compose_email(self, recipient, subject, message_text, thread_id, in_reply_to):
+    def _compose_email(self, recipient, subject, message_text, thread_id, in_reply_to):
         """
         Composes an email.
 
@@ -242,40 +207,13 @@ class Gmail_client:
 
         return email_body
 
-    def save_email_draft(self, email):
-        try:
-            wrapped_email = {
-            'message': email
-            }
-            self.client.users().drafts().create(userId="me", body=wrapped_email).execute()
+    # CURRENTLY NOT IN USE
+    # def _send_email(self, email):
+    #     try:
+    #         request = self.client.users().messages().send(userId=self.user, body = email)
+    #         response = request.execute()
 
-        except errors.HttpError as e:
-            print(F'An error occurred saving email draft: {e}')
-
-
-    def send_email(self, email):
-        try:
-            request = self.client.users().messages().send(userId=self.user, body = email)
-            response = request.execute()
-
-            return response
+    #         return response
         
-        except errors.HttpError as e:
-            print(f"An error occurred sending email: {e}")
-
-    def extract_message_header_value(self, message, header_name):
-        """
-        Extracts the value of a specific header from a Gmail message.
-
-        :param message: Gmail message object.
-        :param header_name: Name of the header to extract.
-        :return: Value of the specified header or None if not found.
-        """
-        headers = message['payload']['headers']
-        for header in headers:
-            if header['name'] == header_name:
-                return header['value']
-
-def is_text_part(part):
-    # Return True if the part is plain text, False otherwise
-    return part.get("mimeType") == "text/plain"
+    #     except errors.HttpError as e:
+    #         print(f"An error occurred sending email: {e}")

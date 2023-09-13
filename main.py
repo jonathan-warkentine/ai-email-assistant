@@ -11,7 +11,7 @@ def main():
     # INITIALIZE CONFIGS, CLIENTS, & CONTROLLERS
     configs = initialize_configs()
     gmail_client, chatgpt_client, workiz_client = initialize_clients(configs)
-    scheduling_ctrl, email_ctrl, job_ctrl = initialize_controllers(gmail_client, chatgpt_client, workiz_client)
+    scheduling_ctrl, email_ctrl, job_ctrl = initialize_controllers(gmail_client, chatgpt_client, workiz_client, configs)
 
     # Continuous loop for the business logic
     while True:

@@ -10,11 +10,11 @@ class Email_controller:
 
     def draft_email_responses(self, jobs):
         for job in jobs:
-            draft = self._create_email_draft_from_job(job)
+            draft = self.create_email_draft_from_job(job)
             self.gmail_client.save_email_draft(draft)
 
     def _create_email_draft_from_job(self, job):
-         return self.gmail_client.compose_email(
+         return self.gmail_client._compose_email(
                 recipient=job.recipient,
                 subject=job.subject,
                 message_text=job.chatgpt_completed_conversation, # assuming this contains the response text

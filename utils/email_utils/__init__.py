@@ -3,3 +3,6 @@ from .extract_email_address_from_text import extract_email_address_from_text
 from .convert_line_breaks_to_html import convert_line_breaks_to_html
 from .remove_line_breaks import remove_line_breaks
 from .strip_quoted_text import strip_quoted_text
+from .is_text_part import is_text_part
+from .extract_last_message_in_thread import extract_last_message_in_thread
+from .extract_message_header_value import extract_message_header_value
