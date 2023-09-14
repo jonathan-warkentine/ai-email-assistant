@@ -1,5 +1,5 @@
 import openai
-from utils.date_time_utils.now import now
+from utils.date_time_utils.now_est import now_est
 
 class Chatgpt_client:
     """
@@ -96,7 +96,7 @@ class Chatgpt_client:
         Returns:
             dict: The datetime system message.
         """
-        now_datetime = now()
+        now_datetime = now_est()
         return self._build_system_message(f'Current date and time is {now_datetime}')
 
     def _attach_system_messages_to_message_history(self, message_history, custom_system_content, override_default_system_content=False):
