@@ -11,16 +11,16 @@ class Workiz_client:
             response = requests.get(f'https://api.workiz.com/api/v1/{self.api_token}/job/all/')
             return response.json().get('data')
 
-        except BaseException as e:
-            print(f"An error occurred: {e}")
+        except Exception as e:
+            print(f"An error occurred fetching jobs from the Workiz API: {e}")
 
     def get_job(self, job_uuid):
         try:
             response = requests.get(f'https://api.workiz.com/api/v1/{self.api_token}/job/get/{job_uuid}/')
             return response.json()
 
-        except BaseException as e:
-            print(f"An error occurred: {e}")
+        except Exception as e:
+            print(f"An error occurred fetching a job from the Workiz API: {e}")
     
     def get_scheduled_appointments(self):
         jobs = self.get_jobs()

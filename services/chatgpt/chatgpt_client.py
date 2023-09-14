@@ -1,65 +1,148 @@
-from utils.date_time_utils.now import now
-
 import openai
-import os
+from utils.date_time_utils.now_est import now_est
 
 class Chatgpt_client:
+    """
+    A client wrapper for interfacing with the ChatGPT API.
+
+    Attributes:
+        client (openai.Client): The instance of the openai client.
+        MODEL (str): Model identifier for the ChatGPT API.
+        prompts (dict): Dictionary containing predefined prompts.
+        default_system_messages (list): Default system messages for each request.
+    """
+
     def __init__(self, config):
+        """
+        Initializes the Chatgpt_client with the given configuration.
+
+        Args:
+            config (function): A configuration retrieval function.
+        """
         self.client = openai
         self.MODEL = config('model')
-        self.prompts = config('prompts', return_dicts=True)
+        self.prompts = config('prompts')
         self.client.organization = config('credentials')('OPENAI_ORG_ID')
         self.client.api_key = config('credentials')('OPENAI_API_KEY')
+        self.default_system_messages = self._build_default_system_messages()
 
-    def fetch_chatgpt_response(self, messages, custom_system_content):
-        messages_with_system_content = self.attach_system_content_to_message_history(message_history = messages, custom_system_content = custom_system_content)
+    def issue_chatgpt_request(self, messages, custom_system_content, override_default_system_content=False):
+        """
+        Manages assembling a request, and passing the request to and return value from
+        `fetch_chatgpt_response()`.
+
+        Args:
+            messages (list): List of previous conversation messages.
+            custom_system_content (str): Custom content to append to system messages.
+
+        Returns:
+            str: The ChatGPT response.
+        """
+        messages_with_system_content = self._attach_system_messages_to_message_history(messages, custom_system_content, override_default_system_content)
+        return self.fetch_chatgpt_response(messages_with_system_content)
+
+    def fetch_chatgpt_response(self, messages_with_system_content):
+        """
+        Sends a request to ChatGPT API and fetches the response.
+
+        Args:
+            messages_with_system_content (list): Message list including system messages.
+
+        Returns:
+            str: Response from ChatGPT.
+        """
+        ################################################
+        #####      PRINT FOR DEBUGGING PURPOSES    #####
+        ################################################ 
+        print(f'\n{messages_with_system_content}\n')
+        ################################################
+        
         try:
             response = self.client.ChatCompletion.create(
-                model = self.MODEL,
-                messages = messages_with_system_content,
-                temperature=0,
+                model=self.MODEL,
+                messages=messages_with_system_content,
+                temperature=0
             )
-            return self.extract_response_message(response)
-        except BaseException as e:
+            return self._extract_response_message(response)
+        except Exception as e:  # Catch general exceptions
             print("\nERROR fetching ChatGPT response: ", e, "\n")
+            return None  # Explicitly returning None
 
-    def decide_if_messages_regard_job(self, messages):
-        triage_incoming_email_prompt = self.prompts.get('triage_email_prompt')
-        system_message = self.build_system_message(content=triage_incoming_email_prompt)
-        combined_system_prompt_and_message_history = [system_message] + messages
-        try:
-            response = self.client.ChatCompletion.create(
-                model = self.MODEL,
-                messages = combined_system_prompt_and_message_history,
-                temperature=0,
-            )
-            return self.extract_response_message(response)
-        except BaseException as e:
-            print("\nERROR fetching ChatGPT response for message triage: ", e, "\n")
+    def _build_default_system_messages(self):
+        """
+        Constructs the default system messages to be used in each request.
 
-    def attach_system_content_to_message_history(self, message_history, custom_system_content):
-        all_system_content = self.build_system_content(custom_system_content = custom_system_content)
-        combined_message_history_and_system_content = all_system_content + message_history
-        return combined_message_history_and_system_content
-    
-    def build_system_content(self, custom_system_content):
-        intro_prompt = self.build_intro_prompt()
-        datetime = self.build_datetime()
-        return [intro_prompt, datetime, custom_system_content]
+        Returns:
+            list: List of default system messages.
+        """
+        intro_prompt = self._build_intro_prompt()
+        datetime_system_message = self._build_datetime_system_message()
+        return [intro_prompt, datetime_system_message]
 
-    def build_system_message(self, content):
-        return {
-            'role' : 'system',
-            'content' : content,
-        }
-    
-    def build_intro_prompt(self):
-        intro_prompt = self.prompts.get('intro_prompt')
-        return self.build_system_message(intro_prompt)
-    
-    def build_datetime(self):
-        now_datetime = now()
-        return self.build_system_message(f'Current date and time is {now_datetime}')
-    
-    def extract_response_message(self, chatgpt_response):
+    def _build_intro_prompt(self):
+        """
+        Creates the introductory system message.
+
+        Returns:
+            dict: The intro prompt system message.
+        """
+        intro_prompt = self.prompts('intro_prompt')
+        return self._build_system_message(intro_prompt)
+
+    def _build_datetime_system_message(self):
+        """
+        Creates a system message with the current date and time.
+
+        Returns:
+            dict: The datetime system message.
+        """
+        now_datetime = now_est()
+        return self._build_system_message(f'Current date and time is {now_datetime}')
+
+    def _attach_system_messages_to_message_history(self, message_history, custom_system_content, override_default_system_content=False):
+        """
+        Appends system messages to the existing message history.
+
+        Args:
+            message_history (list): Previous messages in the conversation.
+            custom_system_content (str): Custom system message content.
+
+        Returns:
+            list: Message history with appended system messages.
+        """
+        if override_default_system_content:
+            system_messages = [self._build_system_message(custom_system_content)]
+        else:
+            system_messages = self.default_system_messages.copy()
+            if custom_system_content:
+                custom_system_message = self._build_system_message(custom_system_content)
+                system_messages.append(custom_system_message)
+        
+        return system_messages + message_history
+
+    def _extract_response_message(self, chatgpt_response):
+        """
+        Extracts the actual response message from the ChatGPT response.
+
+        Args:
+            chatgpt_response (dict): Raw response from ChatGPT.
+
+        Returns:
+            str: Extracted response message.
+        """
         return chatgpt_response.get('choices')[0].get('message').get('content')
+
+    def _build_system_message(self, content):
+        """
+        Constructs a system message dictionary.
+
+        Args:
+            content (str): Content for the system message.
+
+        Returns:
+            dict: System message with given content.
+        """
+        return {
+            'role': 'system',
+            'content': content
+        }

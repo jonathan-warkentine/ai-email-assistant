@@ -1,5 +1,14 @@
 # utils/email_utils/__init__.py
-from .extract_email_address_from_text import extract_email_address_from_text
+from .compose_email import compose_email
 from .convert_line_breaks_to_html import convert_line_breaks_to_html
+from .extract_email_address_from_text import extract_email_address_from_text
+from .extract_last_message_in_thread import extract_last_message_in_thread
+from .extract_message_header_value import extract_message_header_value
+from .filter_threads_awaiting_response import filter_threads_awaiting_response
+from .is_text_part import is_text_part
+from .parse_message_thread_ids_from_messages import parse_message_thread_ids_from_messages
+from .parse_new_messages_from_histories import parse_new_messages_from_histories
+from .parse_thread_for_messages import parse_thread_for_messages
+from .process_part import process_part
 from .remove_line_breaks import remove_line_breaks
 from .strip_quoted_text import strip_quoted_text
