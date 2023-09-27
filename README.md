@@ -60,15 +60,15 @@ docker run hello-world
 ```
 5. Authenticate Docker with AWS:
 ```shell
-aws ecr get-login-password --region region | docker login --username AWS --password-stdin your-account-id.dkr.ecr.region.amazonaws.com
+aws ecr get-login-password --region <your-aws-region> | docker login --username AWS --password-stdin <your-account-id.dkr.ecr.region.amazonaws.com>
 ```
 6. Pull your ECR image:
 ```shell
-docker pull your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
+docker pull <your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag>
 ```
 7. Run your Docker image:
 ```shell
-docker run -d your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag
+docker run -d <your-account-id.dkr.ecr.region.amazonaws.com/your-image-name:tag>
 ```
 
 All set!
